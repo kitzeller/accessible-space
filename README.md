@@ -2,6 +2,8 @@
 
 https://kitzeller.github.io/accessible-space/
 
+![img](accessible-space.png)
+
 ### Description
 
 You can define gestures for WASD controls by making a gesture and then clicking the corresponding button. Each time you click the
