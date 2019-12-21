@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Game</title>
+
+    <link rel="stylesheet" type="text/css" href="css/gui.css"/>
+    <style>
+        html, body {
+            font-family: monospace;
+            color: white;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+
+<div style="z-index: 1; position: absolute; top:0; left: 0">
+    <video autoplay playsinline muted id="webcam" width="224" height="224"></video>
+    <br>
+    <button id="class-w">W</button>
+    <button id="class-a">A</button>
+    <button id="class-s">S</button>
+    <button id="class-d">D</button>
+    <button id="class-stop">Stop</button>
+</div>
+
+<div id="info" style="position: absolute; z-index: 1; left: 50%; top: 52%; transform: translate(-50%, -50%)"></div>
+<div class="bars">
+    <div id="health-bar" data-total="1000" data-value="1000">
+        <div id="health-bar-inner">
+            <div id="health-hit"></div>
+        </div>
+    </div>
+    <div id="hunger-bar" data-total="1000" data-value="1000">
+        <div id="hunger-bar-inner">
+            <div id="hunger-hit"></div>
+        </div>
+    </div>
+</div>
+<div class="inventoryRow">
+    <button class="inv"><img src="assets/textures/wood_icon.png"><span id="wood">0</span></button>
+    <button class="inv"><img src="assets/textures/stone_icon.png"><span id="rock">0</span></button>
+    <button class="inv" id="apple-inv"><img src="assets/textures/apple.png"><span id="apple">0</span></button>
+    <button class="inv" disabled><img src="assets/textures/wood_axe.png"></button>
+</div>
+
+<script src="https://unpkg.com/@tensorflow/tfjs"></script>
+<script src="https://unpkg.com/@tensorflow-models/mobilenet"></script>
+<script src="https://unpkg.com/@tensorflow-models/knn-classifier"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.4.9/Tone.js"></script>
+<script src="https://preview.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+<script src="https://unpkg.com/earcut@2.1.1/dist/earcut.min.js"></script>
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+
+<script src="js/randomColor.js"></script>
+<script src="js/Rock.js"></script>
+<script src="js/RockGenerator.js"></script>
+<script src="js/TwigGenerator.js"></script>
+<script src="js/initScene.js"></script>
+</body>
+</html>
