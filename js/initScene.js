@@ -169,10 +169,14 @@ var createScene = function () {
     rightArm.rotation.z = Math.PI - 0.3;
     rightArm.parent = this.camera;
 
+    var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene);
+    myMaterial.diffuseColor = BABYLON.Color3.FromHexString("#E5AF90");
+    rightArm.material = myMaterial;
+
 
     // Add lights to the scene
-    var light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
-    var light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+    var light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+    var light2 = new BABYLON.DirectionalLight("light2", new BABYLON.Vector3(0, 10, -1), scene);
 
     // Space background
     var skybox = BABYLON.Mesh.CreateBox("skyBox", 10000.0, scene);
@@ -224,11 +228,11 @@ var createScene = function () {
     ground.checkCollisions = true;
 
 
-    var ground2 = BABYLON.MeshBuilder.CreateGround("ground", {height: 1000, width: 1000, subdivisions: 200}, scene);
+    var ground2 = BABYLON.MeshBuilder.CreateGround("ground", {height: 1000, width: 1000, subdivisions: 500}, scene);
     ground2.material = new BABYLON.StandardMaterial("ground", scene);
     ground2.material.wireframe = true;
-    ground2.position.x += 2.5;
-    ground2.position.z += 2.5;
+    ground2.position.x += 1;
+    ground2.position.z += 1;
 
 
     console.log('[INFO] Generating rocks');
@@ -236,11 +240,48 @@ var createScene = function () {
     console.log('[INFO] Generating bushes');
     let tg = new BushGenerator(this.scene, shadowGenerator, ground, -500, 500, 100);
 
+    let lastAnimation;
     scene.onPointerDown = (event, pr) => {
+        if (event.button === 0) {
+            if (lastAnimation) {
+                lastAnimation.reset();
+            }
+            var animationBox = new BABYLON.Animation("myAnimation", "rotation.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            // An array with all animation keys
+            var keys = [];
+
+            keys.push({
+                frame: 0,
+                value: rightArm.rotation.x
+            });
+
+            keys.push({
+                frame: 10,
+                value: rightArm.rotation.x * 1.5
+            });
+
+            keys.push({
+                frame: 30,
+                value: rightArm.rotation.x
+            });
+            animationBox.setKeys(keys);
+            rightArm.animations = [];
+            rightArm.animations.push(animationBox);
+            lastAnimation = scene.beginAnimation(rightArm, 0, 30, false);
+        }
 
         var pickX = canvas.width / 2;
         var pickZ = canvas.height / 2;
         var pickResult = scene.pick(pickX, pickZ);
+
+        // Left click
+        if (pickResult && pickResult.distance <= DISTANCE_REQUIREMENT && event.button === 0){
+            console.log(pickResult);
+            // TODO: SPS
+
+        }
+
+        // Right click
         if (pickResult && pickResult.pickedPoint && pickResult.distance <= DISTANCE_REQUIREMENT && event.button === 2) {
             createBox(pickResult.pickedPoint, shadowGenerator);
         }
@@ -257,11 +298,11 @@ var handleKeyDown = function (e) {
     }
 
     if (e.key === " ") {
+        console.log(jumping);
         if (jumping) return;
-        // jumping = true;
-        // camera.position.y += 10;
-        // jumping = false;
 
+        jumping = true;
+        camera.applyGravity = false;
         camera.animations = [];
         var a = new BABYLON.Animation(
             "a",
@@ -272,19 +313,38 @@ var handleKeyDown = function (e) {
         // Animation keys
         var keys = [];
         keys.push({frame: 0, value: camera.position.y});
-        keys.push({frame: 10, value: camera.position.y + 10});
+        keys.push({frame: 6, value: camera.position.y + 10});
         a.setKeys(keys);
         var easingFunction = new BABYLON.CircleEase();
         easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
         a.setEasingFunction(easingFunction);
         camera.animations.push(a);
-        scene.beginAnimation(camera, 0, 10, false, 1, function () {
-            jumping = false;
-        });
+        scene.beginAnimation(camera, 0, 6, false, 1, function () {
+            // Animate down
+            var ray = new BABYLON.Ray(camera.position, new BABYLON.Vector3(0, -1, 0), 100);
+            var hit = scene.pickWithRay(ray);
 
-        // scene.beginAnimation(camera, 0, 10, false, 1, function () {
-        //     jumping = false;
-        // });
+            camera.animations = [];
+            var a = new BABYLON.Animation(
+                "a",
+                "position.y", 10,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+
+            // Animation keys
+            var keys = [];
+            keys.push({frame: 0, value: camera.position.y});
+            keys.push({frame: 6, value: hit.pickedMesh ? hit.pickedMesh.position.y + 4 : camera.position.y - 10});
+            a.setKeys(keys);
+            var easingFunction = new BABYLON.CircleEase();
+            easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+            a.setEasingFunction(easingFunction);
+            camera.animations.push(a);
+            scene.beginAnimation(camera, 0, 6, false, 1, function () {
+                camera.applyGravity = true;
+                jumping = false;
+            });
+        });
     }
 };
 
@@ -336,19 +396,19 @@ var decreaseHunger = function (damage) {
 };
 
 var createBox = function (pickedPoint, sg) {
-    var boxSize = 5;
+    var boxSize = 2;
     var mat = new BABYLON.StandardMaterial("", scene);
     mat.diffuseTexture = new BABYLON.Texture("https://i.imgur.com/LrucUu6.jpg", scene);
-    var mesh = BABYLON.Mesh.CreateBox("box", boxSize + .1, scene);
+    var mesh = BABYLON.Mesh.CreateBox("box", boxSize + .05, scene);
     mesh.material = mat;
     mesh.checkCollisions = true;
     sg.getShadowMap().renderList.push(mesh);
-    mesh.position.x = nearest(pickedPoint.x, 5);
-    mesh.position.z = nearest(pickedPoint.z, 5);
-    mesh.position.y = nearest(pickedPoint.y + (boxSize - boxSize / 2), 5) - 2.5;
+    mesh.position.x = nearest(pickedPoint.x, boxSize);
+    mesh.position.z = nearest(pickedPoint.z, boxSize);
+    mesh.position.y = nearest(pickedPoint.y + (boxSize - boxSize / 2), boxSize) - boxSize / 2;
     let count = 0;
-    while (mesh.position.y < 2.5) {
-        mesh.position.y = nearest(pickedPoint.y + count + (boxSize - boxSize / 2), 5) - 2.5;
+    while (mesh.position.y < boxSize / 2) {
+        mesh.position.y = nearest(pickedPoint.y + count + (boxSize - boxSize / 2), boxSize) - boxSize / 2;
         count++;
     }
 
